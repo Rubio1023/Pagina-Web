@@ -6,10 +6,10 @@ app = Flask(__name__)
 # Conexión a la base de datos
 def get_db_connection():
     conn = mysql.connector.connect(
-        host='localhost',        # Cambia esto si tu servidor está en otro lugar
-        user='tu_usuario',       # Tu nombre de usuario de MySQL
-        password='tu_contraseña', # Tu contraseña de MySQL
-        database='reservas_hotel' # El nombre de tu base de datos
+        host='localhost',#servidor
+        user='', #nombre de usuario de MySQL
+        password='', #contraseña de MySQL
+        database='reservas_hotel' # El nombre de la base de datos
     )
     return conn
 
