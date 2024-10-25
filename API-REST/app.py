@@ -1,13 +1,18 @@
-import sqlite3
+import mysql.connector
 from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# Conexión a la base de datos
+# Conexión a la base de datos MySQL
 def get_db_connection():
-    conn = sqlite3.connect('reservas_hotel.db')
-    conn.row_factory = sqlite3.Row
+    conn = mysql.connector.connect(
+        host='localhost',  # Cambia esto si tu servidor está en otro lugar
+        user='tu_usuario',
+        password='tu_contraseña',
+        database='nombre_de_tu_base_de_datos'
+    )
     return conn
+
 
 # Crear la tabla si no existe
 def init_db():
