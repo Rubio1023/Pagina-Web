@@ -27,22 +27,32 @@ def get_db_connection():
     )
 
 # Inicialización de SQLAlchemy
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/tourist_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/reservas'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Ruta para obtener todas las reservas
-# Obtener todas las reservas
 @app.route('/reservas', methods=['GET'])
 def get_reservas():
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute('SELECT * FROM reservas')
-    reservas = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return jsonify(reservas)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, nombre, correo, fecha_reserva FROM reservas')
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
 
+        # Check if rows are non-empty and in the expected format
+        if not rows or not all(isinstance(row, tuple) for row in rows):
+            return jsonify({"error": "Unexpected result format or empty table"}), 500
+        
+        # Convert rows to list of dictionaries
+        reservas = [{'id': row[0], 'nombre': row[1], 'correo': row[2], 'fecha_reserva': row[3]} for row in rows]
+        return jsonify(reservas)
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": f"Database error: {err}"}), 500
+    except Exception as e:
+        return jsonify({"error": f"Unexpected error: {e}"}), 500
 # Crear una nueva reserva
 @app.route('/reservas', methods=['POST'])
 def create_reserva():
