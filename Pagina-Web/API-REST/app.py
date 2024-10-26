@@ -1,46 +1,49 @@
+from flask_sqlalchemy import SQLAlchemy
 import mysql.connector
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
+import pymysql
 
 app = Flask(__name__)
 
-# Conexión a la base de datos
-def get_db_connection():
-    conn = mysql.connector.connect(
-        host='localhost',#servidor
-        user='root', #nombre de usuario de MySQL
-        password='', #contraseña de MySQL
-        database='reservas_hotel' # El nombre de la base de datos
-    )
-    return conn
 
-# Crear la tabla si no existe
-def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reservas (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(100) NOT NULL,
-            correo VARCHAR(100) NOT NULL,
-            fecha_reserva DATE NOT NULL
-        )
-    ''')
-    conn.commit()
-    cursor.close()
-    conn.close()
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Configuración de la base de datos MySQL
+app.config['MYSQL_HOST'] = 'localhost'
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = ''  # Coloca tu contraseña de MySQL si tienes
+app.config['MYSQL_DB'] = 'reservas'
+
+# Crear la conexión manualmente usando pymysql
+def get_db_connection():
+    return pymysql.connect(
+        host=app.config['MYSQL_HOST'],
+        user=app.config['MYSQL_USER'],
+        password=app.config['MYSQL_PASSWORD'],
+        database=app.config['MYSQL_DB'],
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+# Inicialización de SQLAlchemy
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/tourist_db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
 # Ruta para obtener todas las reservas
+# Obtener todas las reservas
 @app.route('/reservas', methods=['GET'])
 def get_reservas():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)  # Para obtener resultados como diccionarios
+    cursor = conn.cursor(dictionary=True)
     cursor.execute('SELECT * FROM reservas')
     reservas = cursor.fetchall()
     cursor.close()
     conn.close()
     return jsonify(reservas)
 
-# Ruta para crear una nueva reserva
+# Crear una nueva reserva
 @app.route('/reservas', methods=['POST'])
 def create_reserva():
     data = request.get_json()
@@ -52,6 +55,7 @@ def create_reserva():
     cursor.close()
     conn.close()
     return jsonify({'nombre': data['nombre'], 'correo': data['correo'], 'fecha_reserva': data['fecha_reserva']}), 201
+
 
 # Ruta para actualizar una reserva existente
 @app.route('/reservas/<int:id>', methods=['PUT'])
@@ -78,5 +82,5 @@ def delete_reserva(id):
     return jsonify({'message': 'Reserva eliminada con éxito'})
 
 if __name__ == '__main__':
-    init_db()  # Inicializa la base de datos
+
     app.run(debug=True)
